@@ -1,0 +1,49 @@
+:root {
+  --doro-navy: #00175a;
+  --doro-blue: #006fcf;
+  --doro-bg: #f7f8f9;
+  --doro-border: #d5d9dc;
+  --doro-text: #1a1a1a;
+  --doro-muted: #86888c;
+  --doro-muted-2: #53565a;
+  --doro-green-bg: #e6f4ee;
+  --doro-green: #00875a;
+  --doro-orange-bg: #fcefe3;
+  --doro-orange: #b95000;
+  --doro-red-bg: #fbeae9;
+  --doro-red: #c52720;
+  --doro-blue-bg: #e6f0fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: var(--doro-bg);
+  color: var(--doro-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-blue {
+  background: var(--doro-blue-bg);
+  color: var(--doro-blue);
+}
+.badge-red {
+  background: var(--doro-red-bg);
+  color: var(--doro-red);
+}
