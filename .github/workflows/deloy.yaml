@@ -74,7 +74,7 @@ jobs:
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     env:
-      S3_BUCKET: doro-load-frontend       # TODO: 실제 S3 버킷 이름/존재 여부 확정 필요
+      S3_BUCKET: team2-doro-s3-front       # TODO: 실제 S3 버킷 이름/존재 여부 확정 필요
 
     steps:
       - name: Checkout
