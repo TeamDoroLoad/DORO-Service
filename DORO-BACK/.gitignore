@@ -1,0 +1,19 @@
+.gradle/
+build/
+out/
+*.class
+HELP.md
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+
+### Local secrets ###
+.env
+application-local-secret.yml
