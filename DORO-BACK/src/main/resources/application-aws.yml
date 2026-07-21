@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+
+doro:
+  cors:
+    allowed-origins:
+      - ${WEB_ORIGIN}
+
+springdoc:
+  swagger-ui:
+    enabled: false
