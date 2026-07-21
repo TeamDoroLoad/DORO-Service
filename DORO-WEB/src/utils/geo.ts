@@ -3,17 +3,7 @@ import type { GeoPoint } from '../types'
 const EARTH_RADIUS_M = 6371000
 const METERS_PER_DEG_LAT = 111320
 
-/** 기준점(center)으로부터 point까지의 북쪽/동쪽 방향 거리(m). 화면 좌표 변환에 사용하는 근사식(수 km 범위에서 충분히 정확). */
-export function offsetMeters(center: GeoPoint, point: GeoPoint) {
-  const dNorth = (point.latitude - center.latitude) * METERS_PER_DEG_LAT
-  const dEast =
-    (point.longitude - center.longitude) *
-    METERS_PER_DEG_LAT *
-    Math.cos((center.latitude * Math.PI) / 180)
-  return { dNorth, dEast }
-}
-
-/** 기준점에서 북쪽/동쪽으로 dNorth/dEast(m) 떨어진 위경도 좌표를 계산 (offsetMeters의 역연산). */
+/** 기준점에서 북쪽/동쪽으로 dNorth/dEast(m) 떨어진 위경도 좌표를 계산. mockData.ts가 좌표 기반 목데이터 생성에 사용한다. */
 export function pointFromOffset(center: GeoPoint, dNorth: number, dEast: number): GeoPoint {
   return {
     latitude: center.latitude + dNorth / METERS_PER_DEG_LAT,
