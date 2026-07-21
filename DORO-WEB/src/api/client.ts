@@ -1,5 +1,6 @@
 // DORO_Load_AWS_Endpoint_API_명세서.md §4~7 Endpoint에 대응하는 얇은 fetch 클라이언트.
-// VITE_USE_MOCK=true(기본값)이면 mockData.ts로 응답하고, false면 VITE_API_BASE_URL로 실제 요청한다.
+// VITE_USE_MOCK=true일 때만 mockData.ts로 응답하고, 그 외(미설정 포함)에는 VITE_API_BASE_URL로 실제 요청한다.
+// 값이 없을 때 mock으로 fallback되지 않도록 fail-closed로 설계 — 빌드 파이프라인에서 변수 주입을 빠뜨려도 실제 API를 호출한다.
 import type {
   ChargingNetwork,
   ConnectorType,
@@ -18,7 +19,7 @@ import {
   mockStationDetail,
 } from './mockData'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
 function delay<T>(value: T, ms = 250): Promise<T> {
