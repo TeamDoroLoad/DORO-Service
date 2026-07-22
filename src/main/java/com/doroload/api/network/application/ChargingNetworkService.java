@@ -2,7 +2,6 @@ package com.doroload.api.network.application;
 
 import com.doroload.api.network.api.dto.ChargingNetworkListResponse;
 import com.doroload.api.network.api.dto.ChargingNetworkListResponse.ChargingNetworkItem;
-import com.doroload.api.network.api.dto.ChargingNetworkListResponse.OperatorItem;
 import com.doroload.api.network.domain.ChargingNetwork;
 import com.doroload.api.network.infrastructure.mysql.ChargingNetworkJpaRepository;
 import org.springframework.stereotype.Service;
@@ -28,10 +27,7 @@ public class ChargingNetworkService {
     }
 
     private ChargingNetworkItem toItem(ChargingNetwork network) {
-        OperatorItem operatorItem = new OperatorItem(
-                network.getOperator().getOperatorId(),
-                network.getOperator().getOperatorCode(),
-                network.getOperator().getLegalName());
-        return new ChargingNetworkItem(network.getNetworkId(), network.getNetworkName(), operatorItem);
+        return new ChargingNetworkItem(
+                network.getNetworkId(), network.getNetworkName(), network.getOperator().getLegalName());
     }
 }

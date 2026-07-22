@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.List;
 
 // 차량 Trim (vehicle_model 1:N vehicle_trim)
@@ -29,6 +30,19 @@ public class VehicleTrim {
     @Column(name = "trim_name", nullable = false)
     private String trimName;
 
+    // Priority 2(주행가능거리·충전시간 계산)용 예약 필드 — RDS엔 이미 있으나 지금까지 엔티티 매핑이 안 돼 있었음
+    @Column(name = "battery_kwh")
+    private BigDecimal batteryKwh;
+
+    @Column(name = "normal_range_km")
+    private Integer normalRangeKm;
+
+    @Column(name = "max_ac_kw")
+    private BigDecimal maxAcKw;
+
+    @Column(name = "max_dc_kw")
+    private BigDecimal maxDcKw;
+
     @OneToMany(mappedBy = "trim", fetch = FetchType.LAZY)
     private List<VehicleConnector> connectors;
 
@@ -45,6 +59,22 @@ public class VehicleTrim {
 
     public String getTrimName() {
         return trimName;
+    }
+
+    public BigDecimal getBatteryKwh() {
+        return batteryKwh;
+    }
+
+    public Integer getNormalRangeKm() {
+        return normalRangeKm;
+    }
+
+    public BigDecimal getMaxAcKw() {
+        return maxAcKw;
+    }
+
+    public BigDecimal getMaxDcKw() {
+        return maxDcKw;
     }
 
     public List<VehicleConnector> getConnectors() {

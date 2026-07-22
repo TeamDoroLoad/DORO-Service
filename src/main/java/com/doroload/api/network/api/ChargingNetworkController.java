@@ -3,7 +3,9 @@ package com.doroload.api.network.api;
 import com.doroload.api.common.web.ApiResponse;
 import com.doroload.api.common.web.RequestContext;
 import com.doroload.api.network.api.dto.ChargingNetworkListResponse;
+import com.doroload.api.network.api.dto.ChargingNetworkListResponse.ChargingNetworkItem;
 import com.doroload.api.network.application.ChargingNetworkService;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +25,11 @@ public class ChargingNetworkController {
 
     // 네트워크·브랜드 이름으로 충전 네트워크 목록을 조회한다
     @GetMapping("/api/v1/charging-networks")
-    public ResponseEntity<ApiResponse<ChargingNetworkListResponse>> search(
+    public ResponseEntity<ApiResponse<List<ChargingNetworkItem>>> search(
             @RequestParam(required = false) String keyword) {
         ChargingNetworkListResponse response = chargingNetworkService.search(keyword);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic().staleWhileRevalidate(1, TimeUnit.DAYS))
-                .body(ApiResponse.of(response, RequestContext.currentRequestId()));
+                .body(ApiResponse.of(response.items(), RequestContext.currentRequestId()));
     }
 }
