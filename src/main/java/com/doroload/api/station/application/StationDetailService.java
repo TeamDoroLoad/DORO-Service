@@ -18,6 +18,7 @@ import com.doroload.api.station.infrastructure.mysql.LatestChargerStatusReposito
 import com.doroload.api.station.infrastructure.mysql.LatestStatusRow;
 import com.doroload.api.station.infrastructure.mysql.StationJpaRepository;
 import com.doroload.api.station.infrastructure.mysql.StationSourceLinkJpaRepository;
+import com.doroload.api.station.infrastructure.mysql.StationSpatialRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class StationDetailService {
     private final ChargerJpaRepository chargerJpaRepository;
     private final LatestChargerStatusRepository latestChargerStatusRepository;
     private final StationSourceLinkJpaRepository stationSourceLinkJpaRepository;
+    private final StationSpatialRepository stationSpatialRepository;
     private final EstimatedPricingPolicy estimatedPricingPolicy;
     private final FreshnessCalculator freshnessCalculator;
 
@@ -42,12 +44,14 @@ public class StationDetailService {
             ChargerJpaRepository chargerJpaRepository,
             LatestChargerStatusRepository latestChargerStatusRepository,
             StationSourceLinkJpaRepository stationSourceLinkJpaRepository,
+            StationSpatialRepository stationSpatialRepository,
             EstimatedPricingPolicy estimatedPricingPolicy,
             FreshnessCalculator freshnessCalculator) {
         this.stationJpaRepository = stationJpaRepository;
         this.chargerJpaRepository = chargerJpaRepository;
         this.latestChargerStatusRepository = latestChargerStatusRepository;
         this.stationSourceLinkJpaRepository = stationSourceLinkJpaRepository;
+        this.stationSpatialRepository = stationSpatialRepository;
         this.estimatedPricingPolicy = estimatedPricingPolicy;
         this.freshnessCalculator = freshnessCalculator;
     }
@@ -83,7 +87,8 @@ public class StationDetailService {
                 station.getNetwork().getNetworkName(),
                 station.getNetwork().getOperator().getLegalName());
 
-        GeoPoint location = new GeoPoint(station.getLocation().getY(), station.getLocation().getX());
+        // ST_Latitude()/ST_Longitude()로 조회 — JPA Point.getX()/getY()는 MySQL 8 SRID 4326 축 순서 함정에 취약해 사용하지 않는다
+        GeoPoint location = stationSpatialRepository.findLatLng(stationId);
 
         return new StationDetailResponse(
                 station.getStationId(),

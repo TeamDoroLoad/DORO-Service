@@ -34,3 +34,5 @@ Thumbs.db
 !.env.example
 application-local-secret.yml
 application-*-secret.yml
+CICD/secret.yaml
+!CICD/secret.example.yaml

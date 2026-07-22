@@ -1,5 +1,6 @@
 package com.doroload.api.station.infrastructure.mysql;
 
+import com.doroload.api.common.geo.GeoPoint;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -7,9 +8,17 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-// MySQL Spatial 반경 검색 전용 Native Query 저장소 (구현 가이드 7.5)
+// MySQL Spatial 관련 Native Query 저장소 (반경 검색: 구현 가이드 7.5, 좌표 단건 조회 포함)
 @Repository
 public class StationSpatialRepository {
+
+    // ST_X()/ST_Y()는 MySQL 8 SRID 4326의 SRS 축 순서(위도-경도)를 따라 값이 뒤바뀌어 반환될 수 있으므로
+    // 축 순서에 안전한 ST_Latitude()/ST_Longitude()만 사용한다 (ev-charger-collector-result-report.md 참고)
+    private static final String LAT_LNG_SQL = """
+            SELECT ST_Latitude(location) AS latitude, ST_Longitude(location) AS longitude
+            FROM station
+            WHERE station_id = :stationId
+            """;
 
     private static final String CANDIDATE_SQL = """
             SELECT
@@ -60,6 +69,13 @@ public class StationSpatialRepository {
 
     public StationSpatialRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    // 충전소 단건의 위도·경도 조회 (JPA Point.getX()/getY() 대신 사용 — 축 순서 안전)
+    public GeoPoint findLatLng(Long stationId) {
+        Map<String, Object> params = Map.of("stationId", stationId);
+        return jdbcTemplate.queryForObject(LAT_LNG_SQL, params, (rs, rowNum) ->
+                new GeoPoint(rs.getDouble("latitude"), rs.getDouble("longitude")));
     }
 
     // 중심 좌표 반경 이내이면서 요청 차량과 호환 커넥터를 1개 이상 보유한 충전소 후보를 거리순으로 조회
