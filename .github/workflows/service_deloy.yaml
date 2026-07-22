@@ -7,6 +7,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2              # 서울 리전 코드
+  CLOUDFRONT_DISTRIBUTION_ID: E3RZHD5Y24C4BO   # doro.beam0331.click 프로덕션 배포
 
 jobs:
   # 백엔드 이미지 빌드 후 ECR로 푸시
@@ -74,3 +75,8 @@ jobs:
         run: |
           kubectl set image deployment/doro-app doro-app=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -n default
           kubectl rollout status deployment/doro-app -n default --timeout=180s
+
+      # /api/* 캐시 동작은 CachingDisabled라 평소엔 불필요하지만, 캐시 정책이 바뀌거나
+      # 프론트와 동일하게 안전장치를 맞추기 위해 배포 시마다 무효화한다.
+      - name: Invalidate CloudFront /api/* cache
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/api/*"
