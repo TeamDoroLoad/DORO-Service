@@ -1,9 +1,7 @@
 package com.doroload.api.vehicle.application;
 
 import com.doroload.api.vehicle.api.dto.VehicleTrimListResponse;
-import com.doroload.api.vehicle.api.dto.VehicleTrimListResponse.VehicleConnectorItem;
 import com.doroload.api.vehicle.api.dto.VehicleTrimListResponse.VehicleTrimItem;
-import com.doroload.api.vehicle.domain.VehicleConnector;
 import com.doroload.api.vehicle.domain.VehicleTrim;
 import com.doroload.api.vehicle.infrastructure.mysql.VehicleTrimJpaRepository;
 import java.util.Comparator;
@@ -55,25 +53,21 @@ public class VehicleTrimService {
     }
 
     private VehicleTrimItem toItem(VehicleTrim trim) {
-        List<VehicleConnectorItem> connectors = trim.getConnectors().stream()
+        List<String> connectorCodes = trim.getConnectors().stream()
                 .sorted(Comparator.comparing(vc -> vc.getConnectorType().getConnectorCode()))
-                .map(this::toConnectorItem)
+                .map(vc -> vc.getConnectorType().getConnectorCode())
                 .toList();
         return new VehicleTrimItem(
                 trim.getVehicleTrimId(),
-                trim.getModel().getBrand().getBrandId(),
                 trim.getModel().getBrand().getBrandName(),
-                trim.getModel().getModelId(),
                 trim.getModel().getModelName(),
                 trim.getTrimName(),
-                connectors);
-    }
-
-    private VehicleConnectorItem toConnectorItem(VehicleConnector connector) {
-        return new VehicleConnectorItem(
-                connector.getConnectorType().getConnectorCode(),
-                connector.getConnectorType().getConnectorName(),
-                connector.isStandard());
+                trim.getBatteryKwh(),
+                trim.getNormalRangeKm(),
+                null,
+                trim.getMaxAcKw(),
+                trim.getMaxDcKw(),
+                connectorCodes);
     }
 
     // 검색어를 정규화하고 LIKE Wildcard(%)를 Java에서 미리 조립한다
