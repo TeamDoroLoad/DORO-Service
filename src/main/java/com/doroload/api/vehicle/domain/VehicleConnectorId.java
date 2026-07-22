@@ -5,11 +5,11 @@ import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-// vehicle_connector 복합 PK (trim_id, connector_code)
+// vehicle_connector 복합 PK (vehicle_trim_id, connector_code)
 @Embeddable
 public class VehicleConnectorId implements Serializable {
 
-    @Column(name = "trim_id")
+    @Column(name = "vehicle_trim_id")
     private Long trimId;
 
     @Column(name = "connector_code")

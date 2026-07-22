@@ -16,6 +16,6 @@ public record VehicleTrimListResponse(
             List<VehicleConnectorItem> connectors) {
     }
 
-    public record VehicleConnectorItem(String connectorCode, String connectorName, String chargeMode, boolean isStandard) {
+    public record VehicleConnectorItem(String connectorCode, String connectorName, boolean isStandard) {
     }
 }

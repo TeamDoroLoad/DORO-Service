@@ -9,7 +9,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 
-// 차량 Trim이 지원하는 커넥터 (N:M 해소, 관계 이외 charge_mode·is_standard 속성을 가지므로 명시적 Entity로 구현)
+// 차량 Trim이 지원하는 커넥터 (N:M 해소, 관계 이외 is_standard 속성을 가지므로 명시적 Entity로 구현)
 @Entity
 @Table(name = "vehicle_connector")
 public class VehicleConnector {
@@ -19,16 +19,13 @@ public class VehicleConnector {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("trimId")
-    @JoinColumn(name = "trim_id")
+    @JoinColumn(name = "vehicle_trim_id")
     private VehicleTrim trim;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("connectorCode")
     @JoinColumn(name = "connector_code")
     private ConnectorTypeEntity connectorType;
-
-    @Column(name = "charge_mode", nullable = false)
-    private String chargeMode;
 
     @Column(name = "is_standard", nullable = false)
     private boolean standard;
@@ -42,10 +39,6 @@ public class VehicleConnector {
 
     public ConnectorTypeEntity getConnectorType() {
         return connectorType;
-    }
-
-    public String getChargeMode() {
-        return chargeMode;
     }
 
     public boolean isStandard() {
