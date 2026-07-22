@@ -1,0 +1,76 @@
+name: Deploy DORO Service
+
+on:
+  push:
+    branches:
+      - main # main 브랜치에 push가 발생하면 작동합니다.
+
+env:
+  AWS_REGION: ap-northeast-2              # 서울 리전 코드
+
+jobs:
+  # 백엔드 이미지 빌드 후 ECR로 푸시
+  # (리포지토리 구조 변경으로 DORO-BACK 하위 폴더가 사라지고 저장소 루트가 곧 백엔드이므로,
+  #  더 이상 경로 필터/프런트엔드 job이 필요 없습니다.)
+  build-and-push:
+    name: Build and Push Backend Image to ECR
+    runs-on: ubuntu-latest
+    env:
+      ECR_REPOSITORY: team2/doroload      # TODO: 실제 ECR 리포지토리 이름/존재 여부 확정 필요
+    outputs:
+      ecr_registry: ${{ steps.login-ecr.outputs.registry }}
+      ecr_repository: ${{ env.ECR_REPOSITORY }}
+      image_tag: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}     # 커밋 해시값으로 태그 고정
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+  # ECR에 새 이미지가 올라간 직후, EKS의 doro-app Deployment(DORO-Infra/CICD/backend-deployment.yaml)
+  # 이미지를 새 태그로 갱신해 재배포를 트리거합니다. (kubectl set image → rollout)
+  # 사전 조건: IAM 사용자 cld-team2-doro-github-action 이 EKS 클러스터 access entry로 등록되어 있어야 함
+  deploy-backend:
+    name: Deploy new image to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      CLUSTER_NAME: team-2-doro-load-cluster   # ap-northeast-2, EKS Auto Mode
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig for EKS cluster
+        run: aws eks update-kubeconfig --name $CLUSTER_NAME --region ${{ env.AWS_REGION }}
+
+      - name: Set new image on doro-app Deployment
+        env:
+          ECR_REGISTRY: ${{ needs.build-and-push.outputs.ecr_registry }}
+          ECR_REPOSITORY: ${{ needs.build-and-push.outputs.ecr_repository }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        run: |
+          kubectl set image deployment/doro-app doro-app=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -n default
+          kubectl rollout status deployment/doro-app -n default --timeout=180s
