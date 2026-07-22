@@ -73,7 +73,6 @@ public class VehicleTrimService {
         return new VehicleConnectorItem(
                 connector.getConnectorType().getConnectorCode(),
                 connector.getConnectorType().getConnectorName(),
-                connector.getChargeMode(),
                 connector.isStandard());
     }
 

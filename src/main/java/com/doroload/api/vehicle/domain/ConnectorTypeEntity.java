@@ -17,9 +17,6 @@ public class ConnectorTypeEntity {
     @Column(name = "connector_name", nullable = false)
     private String connectorName;
 
-    @Column(name = "charge_mode", nullable = false)
-    private String chargeMode;
-
     protected ConnectorTypeEntity() {
     }
 
@@ -29,9 +26,5 @@ public class ConnectorTypeEntity {
 
     public String getConnectorName() {
         return connectorName;
-    }
-
-    public String getChargeMode() {
-        return chargeMode;
     }
 }
