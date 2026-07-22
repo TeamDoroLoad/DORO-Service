@@ -7,14 +7,27 @@ import java.util.Map;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-// v_charger_latest_status View 조회 전용 저장소 (구현 가이드 7.6)
+// 충전기별 최신 상태 조회 (구현 가이드 7.6 로직 기준).
+// 원래 설계는 v_charger_latest_status DB VIEW를 두는 것이지만(다른 Schema 객체처럼 담당자가
+// 수동 생성), 그 VIEW가 아직 RDS에 없고 "RDS 구조는 변경하지 않는다"는 원칙상 VIEW 생성도
+// 보류 중이라 동일 로직을 charger_status_history에 직접 인라인했다. charger_id 필터를 윈도우
+// 함수 이전(가장 안쪽 서브쿼리)에 걸어 VIEW 경유보다 스캔 범위를 확실히 좁힌다.
 @Repository
 public class LatestChargerStatusRepository {
 
     private static final String SQL = """
             SELECT charger_id, status, source_updated_at, collected_at
-            FROM v_charger_latest_status
-            WHERE charger_id IN (:chargerIds)
+            FROM (
+                SELECT
+                    h.*,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY h.charger_id
+                        ORDER BY h.source_updated_at DESC, h.collected_at DESC, h.status_id DESC
+                    ) AS rn
+                FROM charger_status_history h
+                WHERE h.charger_id IN (:chargerIds)
+            ) ranked
+            WHERE ranked.rn = 1
             """;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
