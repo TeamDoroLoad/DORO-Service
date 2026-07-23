@@ -19,7 +19,7 @@ public class VehicleConnector {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("trimId")
-    @JoinColumn(name = "trim_id")
+    @JoinColumn(name = "vehicle_trim_id")
     private VehicleTrim trim;
 
     @ManyToOne(fetch = FetchType.LAZY)

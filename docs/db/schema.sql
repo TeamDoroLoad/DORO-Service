@@ -133,13 +133,15 @@ CREATE TABLE station_source_link (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 12. 차량 Trim ↔ 지원 커넥터 (N:M 해소, 복합 PK)
+-- 컬럼명 vehicle_trim_id는 실제 RDS 기준 확인됨(2026-07-23, 프로덕션 파드 15시간 무중단 구동으로 검증) —
+-- 과거 trim_id로 문서만 앞서나간 적이 있었음(PR #9), 절대 다시 바꾸지 말 것.
 CREATE TABLE vehicle_connector (
-    trim_id          BIGINT UNSIGNED NOT NULL,
+    vehicle_trim_id  BIGINT UNSIGNED NOT NULL,
     connector_code   VARCHAR(20) NOT NULL,
     charge_mode      VARCHAR(10) NOT NULL,
     is_standard      TINYINT(1)  NOT NULL DEFAULT 0,
-    PRIMARY KEY (trim_id, connector_code),
-    CONSTRAINT fk_vconn_trim FOREIGN KEY (trim_id) REFERENCES vehicle_trim (vehicle_trim_id),
+    PRIMARY KEY (vehicle_trim_id, connector_code),
+    CONSTRAINT fk_vconn_trim FOREIGN KEY (vehicle_trim_id) REFERENCES vehicle_trim (vehicle_trim_id),
     CONSTRAINT fk_vconn_connector_type FOREIGN KEY (connector_code) REFERENCES connector_type (connector_code),
     CONSTRAINT ck_vconn_charge_mode CHECK (charge_mode IN ('AC', 'DC', 'UNKNOWN'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

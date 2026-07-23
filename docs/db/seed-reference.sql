@@ -28,7 +28,7 @@ INSERT INTO vehicle_trim (vehicle_trim_id, model_id, trim_name) VALUES
     (301, 23, '스탠다드'),
     (302, 23, '롱레인지');
 
-INSERT INTO vehicle_connector (trim_id, connector_code, charge_mode, is_standard) VALUES
+INSERT INTO vehicle_connector (vehicle_trim_id, connector_code, charge_mode, is_standard) VALUES
     (101, 'DC_COMBO_1', 'DC', TRUE),
     (101, 'AC_5PIN',    'AC', TRUE),
     (102, 'DC_COMBO_1', 'DC', TRUE),
