@@ -36,3 +36,6 @@ application-local-secret.yml
 application-*-secret.yml
 CICD/secret.yaml
 !CICD/secret.example.yaml
+
+### Local-only test data (RDS 덤프 등 실데이터 포함, 절대 커밋 금지) ###
+.localtest/

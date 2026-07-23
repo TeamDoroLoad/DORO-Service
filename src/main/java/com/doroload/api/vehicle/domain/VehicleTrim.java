@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -30,17 +31,17 @@ public class VehicleTrim {
     @Column(name = "trim_name", nullable = false)
     private String trimName;
 
-    // Priority 2(주행가능거리·충전시간 계산)용 예약 필드 — RDS엔 이미 있으나 지금까지 엔티티 매핑이 안 돼 있었음
-    @Column(name = "battery_kwh")
+    // Priority 2(주행가능거리·충전시간 계산)용 예약 필드 — DB 컬럼이 아직 없어 @Transient로 보류 (0번 규칙: 스키마는 그대로, 컬럼 생기면 @Column으로 전환)
+    @Transient
     private BigDecimal batteryKwh;
 
-    @Column(name = "normal_range_km")
+    @Transient
     private Integer normalRangeKm;
 
-    @Column(name = "max_ac_kw")
+    @Transient
     private BigDecimal maxAcKw;
 
-    @Column(name = "max_dc_kw")
+    @Transient
     private BigDecimal maxDcKw;
 
     @OneToMany(mappedBy = "trim", fetch = FetchType.LAZY)
