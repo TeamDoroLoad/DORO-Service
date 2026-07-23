@@ -14,7 +14,6 @@ import com.doroload.api.station.api.dto.StationDetailResponse.SourceLinkItem;
 import com.doroload.api.station.domain.Charger;
 import com.doroload.api.station.domain.Station;
 import com.doroload.api.station.infrastructure.mysql.ChargerJpaRepository;
-import com.doroload.api.station.infrastructure.mysql.LatestChargerStatusRepository;
 import com.doroload.api.station.infrastructure.mysql.LatestStatusRow;
 import com.doroload.api.station.infrastructure.mysql.StationJpaRepository;
 import com.doroload.api.station.infrastructure.mysql.StationSourceLinkJpaRepository;
@@ -22,18 +21,18 @@ import com.doroload.api.station.infrastructure.mysql.StationSpatialRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// 충전소·충전기 상세 조회 (MySQL만 사용, 이동시간은 추천 API에서 계산한 값을 재계산하지 않음)
+// 충전소·충전기 상세 조회. 충전기 상태는 ChargerStatusResolver를 거쳐 Redis 우선·MySQL 폴백으로 조회하고,
+// 이동시간은 추천 API에서 계산한 값을 재계산하지 않음
 @Service
 @Transactional(readOnly = true)
 public class StationDetailService {
 
     private final StationJpaRepository stationJpaRepository;
     private final ChargerJpaRepository chargerJpaRepository;
-    private final LatestChargerStatusRepository latestChargerStatusRepository;
+    private final ChargerStatusResolver chargerStatusResolver;
     private final StationSourceLinkJpaRepository stationSourceLinkJpaRepository;
     private final StationSpatialRepository stationSpatialRepository;
     private final EstimatedPricingPolicy estimatedPricingPolicy;
@@ -42,14 +41,14 @@ public class StationDetailService {
     public StationDetailService(
             StationJpaRepository stationJpaRepository,
             ChargerJpaRepository chargerJpaRepository,
-            LatestChargerStatusRepository latestChargerStatusRepository,
+            ChargerStatusResolver chargerStatusResolver,
             StationSourceLinkJpaRepository stationSourceLinkJpaRepository,
             StationSpatialRepository stationSpatialRepository,
             EstimatedPricingPolicy estimatedPricingPolicy,
             FreshnessCalculator freshnessCalculator) {
         this.stationJpaRepository = stationJpaRepository;
         this.chargerJpaRepository = chargerJpaRepository;
-        this.latestChargerStatusRepository = latestChargerStatusRepository;
+        this.chargerStatusResolver = chargerStatusResolver;
         this.stationSourceLinkJpaRepository = stationSourceLinkJpaRepository;
         this.stationSpatialRepository = stationSpatialRepository;
         this.estimatedPricingPolicy = estimatedPricingPolicy;
@@ -63,9 +62,7 @@ public class StationDetailService {
 
         List<Charger> chargers = chargerJpaRepository.findByStationIdWithConnectors(stationId);
         List<Long> chargerIds = chargers.stream().map(Charger::getChargerId).toList();
-        Map<Long, LatestStatusRow> latestStatusByChargerId = latestChargerStatusRepository
-                .findLatestByChargerIds(chargerIds).stream()
-                .collect(java.util.stream.Collectors.toMap(LatestStatusRow::chargerId, Function.identity()));
+        Map<Long, LatestStatusRow> latestStatusByChargerId = chargerStatusResolver.resolve(chargerIds);
 
         Instant now = Instant.now();
         List<ChargerItem> chargerItems = chargers.stream()

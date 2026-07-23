@@ -9,7 +9,6 @@ import com.doroload.api.station.api.dto.NearbyStationsResponse.PaginationInfo;
 import com.doroload.api.station.api.dto.NearbyStationsResponse.SourceInfo;
 import com.doroload.api.station.domain.StationSourceLink;
 import com.doroload.api.station.infrastructure.mysql.ChargerConnectorRow;
-import com.doroload.api.station.infrastructure.mysql.LatestChargerStatusRepository;
 import com.doroload.api.station.infrastructure.mysql.LatestStatusRow;
 import com.doroload.api.station.infrastructure.mysql.StationCandidateRow;
 import com.doroload.api.station.infrastructure.mysql.StationSourceLinkJpaRepository;
@@ -38,17 +37,17 @@ public class NearbyStationService {
     private static final int INTERNAL_CANDIDATE_LIMIT = 200;
 
     private final StationSpatialRepository stationSpatialRepository;
-    private final LatestChargerStatusRepository latestChargerStatusRepository;
+    private final ChargerStatusResolver chargerStatusResolver;
     private final StationSourceLinkJpaRepository stationSourceLinkJpaRepository;
     private final VehicleConnectorJpaRepository vehicleConnectorJpaRepository;
 
     public NearbyStationService(
             StationSpatialRepository stationSpatialRepository,
-            LatestChargerStatusRepository latestChargerStatusRepository,
+            ChargerStatusResolver chargerStatusResolver,
             StationSourceLinkJpaRepository stationSourceLinkJpaRepository,
             VehicleConnectorJpaRepository vehicleConnectorJpaRepository) {
         this.stationSpatialRepository = stationSpatialRepository;
-        this.latestChargerStatusRepository = latestChargerStatusRepository;
+        this.chargerStatusResolver = chargerStatusResolver;
         this.stationSourceLinkJpaRepository = stationSourceLinkJpaRepository;
         this.vehicleConnectorJpaRepository = vehicleConnectorJpaRepository;
     }
@@ -88,9 +87,7 @@ public class NearbyStationService {
                 .map(ChargerConnectorRow::chargerId)
                 .distinct()
                 .toList();
-        Map<Long, LatestStatusRow> latestStatusByChargerId = latestChargerStatusRepository
-                .findLatestByChargerIds(allChargerIds).stream()
-                .collect(Collectors.toMap(LatestStatusRow::chargerId, Function.identity()));
+        Map<Long, LatestStatusRow> latestStatusByChargerId = chargerStatusResolver.resolve(allChargerIds);
 
         Map<Long, StationSourceLink> primarySourceByStation = stationSourceLinkJpaRepository
                 .findByStationIds(stationIds).stream()
