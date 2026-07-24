@@ -61,7 +61,11 @@ doro:
     route-cache-ttl-seconds: 240
     route-lock-ttl-millis: 3000
     rate-limit:
-      route-limit-per-minute: 60
+      # [부하테스트 임시 변경 2026-07-24] 0으로 두면 RedisRateLimiter.tryAcquire()의 count<=0 조건이
+      # 항상 거짓이 되어 RouteResolverService가 TmapRouteClient를 절대 호출하지 않는다 — k6 부하테스트
+      # 동안 실제 TMAP 호출(하루 무료 한도 1,000건)을 소진하지 않기 위함. 상세: DORO_Load_부하테스트_TMAP차단_설계.md
+      # 테스트 종료 후 반드시 60으로 되돌릴 것.
+      route-limit-per-minute: 0
       location-limit-per-minute: 60
   recommendation:
     policy-version: v1
