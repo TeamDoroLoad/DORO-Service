@@ -33,8 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class NearbyStationService {
 
-    // 구현 가이드 7.5 권장: 결과 상한을 내부적으로 둔다(초기 권장 200개)
-    private static final int INTERNAL_CANDIDATE_LIMIT = 200;
+    // 도심 밀집 지역에서 200개 상한이 실제로는 거리순 정렬 후 채워져 최근접 1km 안쪽에서만
+    // 결과가 끊기고, 상태/커넥터/소스 조회까지 200건 전부에 대해 수행되어 응답이 느려지는 문제가
+    // 있었다. 현재 위치 기준 최근접 30개만 보여주는 것으로 정책을 변경(2026-07-24).
+    private static final int INTERNAL_CANDIDATE_LIMIT = 30;
 
     private final StationSpatialRepository stationSpatialRepository;
     private final ChargerStatusResolver chargerStatusResolver;
