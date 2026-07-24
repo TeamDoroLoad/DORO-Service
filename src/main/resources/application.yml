@@ -16,6 +16,13 @@ spring:
   jackson:
     time-zone: UTC
     default-property-inclusion: non_null
+  data:
+    redis:
+      # ElastiCache 연결 장애 시 Lettuce 기본 connect timeout(10s)이 그대로 요청 지연으로
+      # 전가돼 nearby/detail API가 10초 이상 걸리는 문제가 있었다(2026-07-24). 이 값이 없으면
+      # RedisChargerStatusCache의 MySQL 폴백이 정상 동작해도 폴백에 도달하기까지 너무 오래 걸린다.
+      connect-timeout: 300ms
+      timeout: 500ms
 
 server:
   port: 8080
