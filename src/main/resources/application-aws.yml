@@ -7,6 +7,11 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT:6379}
+      # ElastiCache Serverless는 전송 구간 암호화가 항상 강제되고 끌 수 없다(옵션 자체가 없음).
+      # 이게 꺼져 있으면 SG를 열어도 TCP는 연결되고 그 다음 TLS/평문 프로토콜 불일치로
+      # 타임아웃 설정 없이 무한 대기에 빠진다(2026-07-24 실측).
+      ssl:
+        enabled: true
 
 doro:
   cors:
