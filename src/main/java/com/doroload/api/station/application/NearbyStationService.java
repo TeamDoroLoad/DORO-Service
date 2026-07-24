@@ -22,6 +22,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -42,16 +45,19 @@ public class NearbyStationService {
     private final ChargerStatusResolver chargerStatusResolver;
     private final StationSourceLinkJpaRepository stationSourceLinkJpaRepository;
     private final VehicleConnectorJpaRepository vehicleConnectorJpaRepository;
+    private final ExecutorService virtualThreadExecutor;
 
     public NearbyStationService(
             StationSpatialRepository stationSpatialRepository,
             ChargerStatusResolver chargerStatusResolver,
             StationSourceLinkJpaRepository stationSourceLinkJpaRepository,
-            VehicleConnectorJpaRepository vehicleConnectorJpaRepository) {
+            VehicleConnectorJpaRepository vehicleConnectorJpaRepository,
+            ExecutorService virtualThreadExecutor) {
         this.stationSpatialRepository = stationSpatialRepository;
         this.chargerStatusResolver = chargerStatusResolver;
         this.stationSourceLinkJpaRepository = stationSourceLinkJpaRepository;
         this.vehicleConnectorJpaRepository = vehicleConnectorJpaRepository;
+        this.virtualThreadExecutor = virtualThreadExecutor;
     }
 
     public NearbyStationsResponse search(
@@ -80,6 +86,17 @@ public class NearbyStationService {
 
         List<Long> stationIds = candidates.stream().map(StationCandidateRow::stationId).toList();
 
+        // findChargerConnectorRows·findByStationIds는 서로 stationIds에만 의존하고 독립적이라
+        // 순차 호출 시 왕복 지연이 그대로 누적됐다. source link 조회를 커넥터/상태 조회와
+        // 병렬로 실행해 그만큼의 왕복 지연을 숨긴다.
+        CompletableFuture<Map<Long, StationSourceLink>> primarySourceFuture = CompletableFuture.supplyAsync(
+                () -> stationSourceLinkJpaRepository.findByStationIds(stationIds).stream()
+                        .collect(Collectors.toMap(
+                                link -> link.getId().getStationId(),
+                                Function.identity(),
+                                NearbyStationService::preferHigherMatchScore)),
+                virtualThreadExecutor);
+
         Map<Long, List<ChargerConnectorRow>> connectorRowsByStation = stationSpatialRepository
                 .findChargerConnectorRows(stationIds).stream()
                 .collect(Collectors.groupingBy(ChargerConnectorRow::stationId));
@@ -91,12 +108,7 @@ public class NearbyStationService {
                 .toList();
         Map<Long, LatestStatusRow> latestStatusByChargerId = chargerStatusResolver.resolve(allChargerIds);
 
-        Map<Long, StationSourceLink> primarySourceByStation = stationSourceLinkJpaRepository
-                .findByStationIds(stationIds).stream()
-                .collect(Collectors.toMap(
-                        link -> link.getId().getStationId(),
-                        Function.identity(),
-                        NearbyStationService::preferHigherMatchScore));
+        Map<Long, StationSourceLink> primarySourceByStation = join(primarySourceFuture);
 
         Set<Long> networkIdFilter = (networkIds == null || networkIds.isEmpty()) ? null : Set.copyOf(networkIds);
 
@@ -194,6 +206,19 @@ public class NearbyStationService {
                 .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
                 .orElse(null);
+    }
+
+    // CompletableFuture.join()이 CompletionException으로 감싸면 GlobalExceptionHandler의
+    // DataAccessException 등 구체 타입 매칭이 깨지므로 원인 예외를 그대로 꺼내 던진다.
+    private static <T> T join(CompletableFuture<T> future) {
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            switch (e.getCause()) {
+                case RuntimeException re -> throw re;
+                case null, default -> throw e;
+            }
+        }
     }
 
     private static StationSourceLink preferHigherMatchScore(StationSourceLink a, StationSourceLink b) {
